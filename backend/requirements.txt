@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+gunicorn
+pydantic
+python-dotenv
+
+httpx
+requests
+
+google-search-results
+
+sse-starlette
+
+motor
+pymongo

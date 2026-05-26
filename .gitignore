@@ -1,0 +1,25 @@
+.DS_Store
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local secrets
+backend/.env
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Legacy file that may be recreated by editor buffers
+backend/api.py
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+

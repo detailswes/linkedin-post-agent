@@ -1,0 +1,60 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "mongodb://localhost:27017/admin", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ./backend
+    environment:
+      ENV: production
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: automatic_post_agent
+      # Hugging Face Space URL (or local agents) — POST /generate returns {"post": "..."}.
+      AGENT_SERVICE_URL: ${AGENT_SERVICE_URL:-http://host.docker.internal:9000}
+      FRONTEND_ORIGIN: http://localhost:3000
+      ALLOWED_ORIGINS: http://localhost:3000
+      API_PUBLIC_BASE_URL: http://localhost:8000
+      COOKIE_SECURE: "0"
+      SESSION_SECRET: change-me-in-real-deploy
+    ports:
+      - "8000:8000"
+    command: ["bash", "scripts/render_start.sh"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  worker:
+    profiles:
+      - split-worker
+    build:
+      context: ./backend
+    command: ["./scripts/start_worker.sh"]
+    environment:
+      ENV: production
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: automatic_post_agent
+      AGENT_SERVICE_URL: ${AGENT_SERVICE_URL:-http://host.docker.internal:9000}
+      FRONTEND_ORIGIN: http://localhost:3000
+      ALLOWED_ORIGINS: http://localhost:3000
+      API_PUBLIC_BASE_URL: http://localhost:8000
+      COOKIE_SECURE: "0"
+      SESSION_SECRET: change-me-in-real-deploy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo_data:

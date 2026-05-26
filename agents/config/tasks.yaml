@@ -1,0 +1,35 @@
+write_post_task:
+  description: >
+    Write a LinkedIn post draft about: {topic}
+
+    The input may include a "Research findings" section with recent updates.
+    Use only the information provided in the input; do not browse the web or
+    add citations or URLs beyond that context.
+
+    Guidelines:
+      - Open with a punchy hook tied to something timely from the research
+      - Reference up to three specific recent updates or facts (with context)
+      - Explain why this matters now for professionals
+      - End with a thought-provoking question or call to action
+      - Maximum 170 words
+      - First-person, conversational tone
+      - Avoid corporate jargon
+  expected_output: >
+    A LinkedIn post draft under 170 words.
+  agent: writer_agent
+
+edit_post_task:
+  description: >
+    Polish this LinkedIn post for maximum engagement: {write_post_task.output}
+
+    Apply these formatting improvements:
+      - Make the first line stand alone as a hook (no more than 10 words)
+      - Add a blank line between each paragraph or thought
+      - Preserve references to recent updates from the research input
+      - Add 3–5 relevant hashtags at the end
+      - Use 0–2 emojis only when they fit naturally (optional)
+      - Maximum 200 words total
+      - Keep the tone human, concise, and professional
+  expected_output: >
+    Final LinkedIn post under 200 words, properly formatted with hashtags.
+  agent: editor_agent

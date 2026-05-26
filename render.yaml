@@ -1,0 +1,68 @@
+# Render Blueprint: PostForge — Next.js (web) + FastAPI API/worker (Docker) + agents (e.g. Hugging Face) + MongoDB Atlas.
+#
+# Public URLs follow https://<service-name>.onrender.com unless you use a custom domain — then update env vars.
+# Set secrets where sync: false: MONGODB_URI, SESSION_SECRET (or SECRET_KEY — same value), AGENT_SERVICE_URL,
+# LI_CLIENT_ID, LI_CLIENT_SECRET, optional SERPER_API_KEY. Secrets must be on **postforge-api**, not only postforge-web.
+#
+# If Render assigns a different hostname (name collision), set API_PUBLIC_BASE_URL, FRONTEND_ORIGIN,
+# ALLOWED_ORIGINS, NEXT_PUBLIC_API_BASE_URL, and LI_REDIRECT_URI to the URLs shown on each service.
+
+services:
+  # ── Backend: FastAPI + background worker (Dockerfile CMD → scripts/render_start.sh) ──
+  - type: web
+    name: postforge-api
+    runtime: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    envVars:
+      - key: ENV
+        value: production
+      - key: PYTHONPATH
+        value: /app
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: automatic_post_agent
+      - key: SESSION_SECRET
+        sync: false
+      - key: AGENT_SERVICE_URL
+        sync: false
+      - key: API_PUBLIC_BASE_URL
+        value: https://postforge-api.onrender.com
+      - key: FRONTEND_ORIGIN
+        value: https://postforge-web.onrender.com
+      - key: ALLOWED_ORIGINS
+        value: https://postforge-web.onrender.com
+      - key: LI_CLIENT_ID
+        sync: false
+      - key: LI_CLIENT_SECRET
+        sync: false
+      - key: LI_REDIRECT_URI
+        value: https://postforge-api.onrender.com/auth/linkedin/callback
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: SERPER_API_KEY
+        sync: false
+    # Docker runtime: use Dockerfile CMD (Render forbids Blueprint startCommand for docker).
+
+  # ── Frontend: Next.js (Node). NEXT_PUBLIC_* is inlined at build time. ──
+  - type: web
+    name: postforge-web
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: frontend
+    # Resilient npm install (retries + timeout) — avoids ECONNRESET flakes on Render; devDeps for next build.
+    buildCommand: npm config set fetch-retries 5 && npm config set fetch-retry-mintimeout 20000 && npm config set fetch-retry-maxtimeout 120000 && npm config set fetch-timeout 300000 && NPM_CONFIG_PRODUCTION=false npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "20.18.0"
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: https://postforge-api.onrender.com
